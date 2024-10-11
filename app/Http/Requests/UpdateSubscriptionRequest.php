@@ -16,6 +16,7 @@ class UpdateSubscriptionRequest extends FormRequest
         return [
             'subscription_id' => 'required|exists:subscriptions,id',
             'period' => 'required|in:MONTH,YEAR',
+            'number_of_users' => 'integer|min:1',
         ];
     }
 }

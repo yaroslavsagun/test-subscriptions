@@ -7,17 +7,25 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
 use App\Models\User;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    public function login(LoginRequest $request): JsonResponse
+    public function authenticate(LoginRequest $request): RedirectResponse
     {
-        $user = User::query()->where('email', $request->input('email'))->first();
-        if (!$user || !password_verify($request->input('password'), $user->password)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+        $loggedIn = Auth::attempt($request->only('email', 'password'));
+        if(!$loggedIn){
+            return response()->redirectToRoute('login')->withErrors('Invalid credentials');
         }
 
-        return response()->json(['token' => $user->createToken('api_token')->plainTextToken]);
+        return response()->redirectToRoute('dashboard');
+    }
+
+    public function login(): View
+    {
+        return view('login');
     }
 }

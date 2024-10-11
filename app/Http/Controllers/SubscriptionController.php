@@ -8,30 +8,29 @@ use App\Http\Requests\UpdateSubscriptionRequest;
 use App\Models\Company;
 use App\Models\CompanySubscription;
 use App\Models\Subscription;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 
 class SubscriptionController extends Controller
 {
-    public function get(): JsonResponse
+    public function dashboard(): View
     {
-        $subscriptions = Subscription::query()->get();
-
-        return response()->json(['subscriptions' => $subscriptions]);
-    }
-    public function getCurrent(): JsonResponse
-    {
-        $userCompany = Company::query()->firstWhere('owner_id', auth()->id());
+        $allSubscriptions = Subscription::query()->get();
+        $company = Company::query()->firstWhere('owner_id', auth()->id());
         $subscription = CompanySubscription::query()
             ->with(['currentSubscription', 'nextSubscription'])
-            ->where('company_id', $userCompany->id)
+            ->where('company_id', $company->id)
             ->first();
 
-        return response()->json(['subscription' => $subscription]);
+        return view('dashboard', compact('allSubscriptions', 'subscription', 'company'));
     }
 
-    public function update(UpdateSubscriptionRequest $request): JsonResponse
+    public function update(UpdateSubscriptionRequest $request): RedirectResponse
     {
         $company = Company::query()->firstWhere('owner_id', auth()->id());
+        $company->number_of_users = $request->input('number_of_users');
+        $company->save();
+
         $subscription = Subscription::query()->find($request->input('subscription_id'));
 
         $companySubscription = CompanySubscription::query()->where('company_id', $company->id)->first();
@@ -53,6 +52,6 @@ class SubscriptionController extends Controller
             ]);
         }
 
-        return response()->json(['subscription' => $companySubscription]);
+        return response()->redirectToRoute('dashboard');
     }
 }
